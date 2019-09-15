@@ -1,7 +1,6 @@
 #![allow(dead_code, unused_imports)]
 
-use crate::constants::*;
-use super::errors::ParserError;
+use super::errors::{ParserError, ParserErrorKind};
 use UserInput::{Expression, Statement, Empty};
 
 
@@ -51,12 +50,12 @@ impl UserInput {
   pub fn is_valid(&self) -> Result<(), ParserError> {
     match self {
       Statement { left, right } => {
-        var_name_is_valid(left)?;
-        expression_is_valid(right)?;
+        validate::var_name(left)?;
+        validate::expression(right)?;
         Ok(())
       },
       Expression { text } => {
-        expression_is_valid(text)?;
+        validate::expression(text)?;
         Ok(())
       },
       UserInput::Empty => Ok(()),
@@ -65,29 +64,44 @@ impl UserInput {
 }
 
 
-fn expression_is_valid(expr: &str) -> Result<(), ParserError> {
-  if expr.is_empty() {
-    return Err(ParserError::EmptyExpression);
+mod validate {
+  use crate::constants::*;
+  use super::{ParserError, ParserErrorKind::{BadVarName, EmptyExpression}};
+
+
+  pub fn expression(expr: &str) -> Result<(), ParserError> {
+    if expr.is_empty() {
+      return Err(ParserError{ kind: EmptyExpression });
+    }
+  
+    Ok(())
   }
 
-  Ok(())
+
+  pub fn var_name(var_name: &str) -> Result<(), ParserError> {
+    let first = var_name.chars().next().unwrap_or_default();
+
+    if first.is_numeric() {
+      return Err(ParserError { 
+        kind: BadVarName("variable names cannot start with numeric characters") 
+      })
+    }
+
+    if RESERVED_CHARS.iter().any(|&x| var_name.contains(x)) {
+      return Err(ParserError {
+        kind: BadVarName("variable names cannot contain reserved characters")
+      });
+    }
+
+    if var_name.contains(SPACE) {
+      return Err(ParserError {
+        kind: BadVarName("variable names cannot include spaces, use underscores instead (ex. my_var = something)")
+      });
+    }
+
+    Ok(())
+  }
 }
 
 
-fn var_name_is_valid(var_name: &str) -> Result<(), ParserError> {
-  let first = var_name.chars().next().unwrap_or_default();
 
-  if first.is_numeric() {
-    return Err(ParserError::BadVarName("variable names cannot start with numeric characters"));
-  }
-
-  if RESERVED_CHARS.iter().any(|&x| var_name.contains(x)) {
-    return Err(ParserError::BadVarName("variable names cannot contain reserved characters"));
-  }
-
-  if var_name.contains(SPACE) {
-    return Err(ParserError::BadVarName("variable names cannot include spaces, use underscores instead (ex. my_var = something)" ));
-  }
-
-  Ok(())
-}

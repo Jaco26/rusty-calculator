@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-pub fn input() -> Result<String, io::Error> {
+pub fn get_input() -> Result<String, io::Error> {
   print!("> ");
   io::stdout().flush()?;
   let mut ret = String::new();
@@ -9,10 +9,3 @@ pub fn input() -> Result<String, io::Error> {
   Ok(ret)
 }
 
-pub fn out(text: &str) {
-  println!(">> {}", text);
-}
-
-pub fn out_err(err: impl std::error::Error) {
-  eprintln!("{:?}", err);
-}

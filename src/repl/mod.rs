@@ -6,14 +6,20 @@ mod errors;
 
 use std::collections::HashMap;
 use parser::UserInput;
-use terminal::{input, out, out_err};
+use terminal::get_input;
+use crate::evaluator::evaluate_expression;
+
 
 
 pub fn run() {
-  let mut map: HashMap<String, String> = HashMap::new();
+  let mut history = Vec::new();
+
+  let mut evaluated_input_map: HashMap<String, f64> = HashMap::new();
 
   loop {
-    let raw_input = input().unwrap();
+    let raw_input = get_input().unwrap();
+
+    history.push(raw_input.clone()); // raw_input is dropped at the end of the loop scope
 
     let user_input = UserInput::new(&raw_input).unwrap();
 
@@ -21,17 +27,23 @@ pub fn run() {
       Ok(()) => {
         match user_input {
           UserInput::Statement { left, right } => {
-            println!("Evaluating statement: {} = {}", left, right);
+            match evaluate_expression(&right, &evaluated_input_map) {
+              Ok(val) => {
+                &evaluated_input_map.insert(left, val);
+              },
+              Err(err) => eprintln!("{}", err),
+            };
           },
           UserInput::Expression { text } => {
-            println!("Evaluating expression: {}", text);
+            match evaluate_expression(&text, &evaluated_input_map) {
+              Ok(val) => println!("{} = {}", text, val),
+              Err(err) => eprintln!("{}", err),
+            };
           },
           UserInput::Empty => {},
         };
       },
-      Err(err) => {
-        out_err(err);
-      },
+      Err(err) => eprintln!("{}", err),
     };
   }
 }

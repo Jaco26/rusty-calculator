@@ -2,11 +2,15 @@ use std::error;
 use std::fmt;
 
 #[derive(Debug, Clone)]
-pub enum ParserError {
+pub enum ParserErrorKind {
   BadVarName(&'static str),
   EmptyExpression,
 }
 
+#[derive(Debug, Clone)]
+pub struct ParserError {
+  pub kind: ParserErrorKind,
+}
 
 impl fmt::Display for ParserError {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
