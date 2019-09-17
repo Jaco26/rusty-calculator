@@ -4,12 +4,13 @@ use std::fmt;
 #[derive(Debug, Clone)]
 pub enum ParserErrorKind {
   BadVarName(&'static str),
+  AdjacentOperators,
   EmptyExpression,
 }
 
 #[derive(Debug, Clone)]
 pub struct ParserError {
-  pub kind: ParserErrorKind,
+  pub kind: Option<ParserErrorKind>,
 }
 
 impl fmt::Display for ParserError {
