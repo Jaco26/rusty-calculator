@@ -1,7 +1,7 @@
-pub mod char_categories;
 pub mod errors;
 mod accumulator;
 
+use crate::characters::*;
 use errors::{
   ParserError, 
   ParserErrorKind::{
@@ -10,17 +10,16 @@ use errors::{
     EmptyExpression,
   }
 };
-use char_categories::*;
-use accumulator::Accumulator;
+use accumulator::{Accumulator, AccumNode, AccumNodeItem};
 
 #[derive(Debug)]
 pub enum UserInput {
   Assignment {
     left: String,
-    right: Vec<String>,
+    right: Vec<AccumNode>,
   },
   Expression {
-    text: Vec<String>
+    text: Vec<AccumNode>
   },
   Empty,
 }
@@ -60,49 +59,104 @@ impl UserInput {
   }
 }
 
-fn parse_expression(expr: &str) -> Result<Vec<String>, ParserError> {
+fn parse_expression(expr: &str) -> Result<Vec<AccumNode>, ParserError> {
+
+  fn traverse(mut items: Vec<&str>, mut accum: Accumulator) -> Result<Accumulator, ParserError> {
+    for c in items {
+      let c = c.to_string();
+
+      let last = accum.get_last_added();
+
+      match categorize_first_of(&c) {
+        Some(char_kind) => match char_kind {
+          LeftParen |
+          RightParen => {
+            accum.flush_buffer();
+            accum.add_to_buffer(AccumNodeItem::new(&c, char_kind));
+          },
+
+          Alpha |
+          Number |
+          Dot  => {
+            accum.add_to_buffer(AccumNodeItem::new(&c, char_kind))
+          },
+        
+          Math(opt) => match opt {
+            Some(math_char) => match math_char {
+              Multiply => {
+
+              },
+
+              Divide |
+              Add |
+              Subtract => {
+                accum.flush_buffer();
+                accum.add_to_buffer(AccumNodeItem::new(&c, Math(Some(math_char))));
+              }
+
+              _ => {}
+            },
+            None => {},
+          },
+
+          Space => {
+            accum.flush_buffer();
+          },
+        },
+        None => {},
+      }
+    }
+    accum.flush_buffer();
+    Ok(accum)
+  };
+
+  // let no_spaces = expr.replace(" ", "");
+
+  let mut exp_items: Vec<&str> = expr.split("").filter(|&x| !x.is_empty()).collect();
+
   let mut accum = Accumulator::new();
 
-  let last = accum.get_last_added().unwrap_or("NOTHING!".to_string());
+  let result = traverse(exp_items, accum)?;
 
-  println!("last item added to accum = {}", last);
-
-  if let Some(items) = accum.items() {
-    Ok(items)
+  if let Some(values) = result.values() {
+    Ok(values)
   } else {
-    println!("There is nothing in accum._items");
+    println!("There is nothing in accum._values");
     Err(ParserError { kind: None })
   }
 }
 
 fn var_name_is_valid(var_name: &str) -> Result<(), ParserError> {
-  match categorize_first_char_of(var_name) {
+  match categorize_first_of(var_name) {
     Some(val) => match val {
-      _ => Ok(()),
+      Number => return Err(ParserError { kind: Some(BadVarName("variable names cannot start with numbers!")) }),
+      
+      Math(_) | 
+      Dot | 
+      LeftParen | 
+      RightParen => return Err(ParserError { kind: Some(BadVarName("variable names cannot include any reserved characters")) }),
+      
+      Alpha | Space => {},
     },
-    None => Ok(()),
+    None => {},
   }
-  // let first = var_name.chars().next().unwrap_or_default();
 
-  // if first.is_numeric() {
-  //   return Err(ParserError { 
-  //     kind: BadVarName("variable names cannot start with numeric characters") 
-  //   })
-  // }
+  for c in var_name.split("") {
+    match categorize_first_of(c) {
+      Some(val) => match val {
+        Math(_) | 
+        Dot | 
+        Space | 
+        LeftParen | 
+        RightParen => return Err(ParserError { kind: Some(BadVarName("variable names cannot include any reserved characters or spaces")) }),
+        
+        Alpha | Number  => {},
+      },
+      None => {},
+    }
+  }
 
-  // if RESERVED_CHARS.iter().any(|&x| var_name.contains(x)) {
-  //   return Err(ParserError {
-  //     kind: BadVarName("variable names cannot contain reserved characters")
-  //   });
-  // }
-
-  // if var_name.contains(SPACE) {
-  //   return Err(ParserError {
-  //     kind: BadVarName("variable names cannot include spaces, use underscores instead (ex. my_var = something)")
-  //   });
-  // }
-
-  // Ok(())
+  Ok(())
 }
 
 

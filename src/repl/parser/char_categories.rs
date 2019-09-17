@@ -14,19 +14,14 @@ use CharKind::*;
 pub fn categorize_first_char_of(s: &str) -> Option<CharKind> {
   if let Some(c) = s.chars().next() {
     match c {
-      '*' | '/' | '+' | '-' => Some(Math),
+      ' ' => Some(Space),
       '(' => Some(LeftParen),
       ')' => Some(RightParen),
       '.' => Some(Dot),
-      ' ' => Some(Space),
-      'a'..='z' | 'A'..='Z' => Some(Alpha),
-      _ => {
-        if c.is_numeric() {
-          Some(Number)
-        } else {
-          None
-        }
-      }
+      '*' | '/' | '+' | '-' => Some(Math),
+      'a'..='z' | 'A'..='Z' | '_' => Some(Alpha),
+      '0'..='9' => Some(Number),
+      _ => None,
     }
   } else {
     None

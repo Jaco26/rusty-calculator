@@ -31,6 +31,8 @@ pub fn run() {
       UserInput::Empty
     });
 
+    println!("UserInput: {:#?}", user_input);
+
     // match user_input {
     //   Assignment { left, right } => {
 
