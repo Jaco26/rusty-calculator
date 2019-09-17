@@ -16,7 +16,7 @@ pub enum CharKind {
   Dot,
   Alpha,
   Number,
-  Math(Option<MathChar>)
+  Math(MathChar)
 }
 
 pub use MathChar::*;
@@ -29,10 +29,10 @@ pub fn categorize_first_of(s: &str) -> Option<CharKind> {
       '(' => Some(LeftParen),
       ')' => Some(RightParen),
       '.' => Some(Dot),
-      '-' => Some(Math(Some(Subtract))),
-      '+' => Some(Math(Some(Add))),
-      '/' => Some(Math(Some(Divide))),
-      '*' => Some(Math(None)), // two of these next to each other is actually Math::Exponent
+      '-' => Some(Math(Subtract)),
+      '+' => Some(Math(Add)),
+      '/' => Some(Math(Divide)),
+      '*' => Some(Math(Multiply)), // two of these next to each other is actually Math::Exponent
       '0'..='9' => Some(Number),
       
       'a'..='z' | 

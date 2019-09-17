@@ -65,14 +65,33 @@ fn parse_expression(expr: &str) -> Result<Vec<AccumNode>, ParserError> {
     for c in items {
       let c = c.to_string();
 
-      let last = accum.get_last_added();
-
       match categorize_first_of(&c) {
         Some(char_kind) => match char_kind {
-          LeftParen |
+          LeftParen => {
+            
+            // if the item to the left is NOT None and it is NOT Math or RightParen,
+            // buffer and flush a Multiply AccumNodeItem
+            if let Some(prev_accum_node_item) = accum.get_last_added() {
+              match prev_accum_node_item.kind() {
+                RightParen |
+                Alpha |
+                Number |
+                Dot => {
+                  accum.flush_buffer();
+                  accum.add_to_buffer(AccumNodeItem::new("*", Math(Multiply)));
+                  accum.flush_buffer();
+                },
+                _ => {},
+              };
+            };
+            accum.flush_buffer();
+            accum.add_to_buffer(AccumNodeItem::new(&c, char_kind));
+            accum.flush_buffer();
+          },
           RightParen => {
             accum.flush_buffer();
             accum.add_to_buffer(AccumNodeItem::new(&c, char_kind));
+            accum.flush_buffer();
           },
 
           Alpha |
@@ -81,22 +100,39 @@ fn parse_expression(expr: &str) -> Result<Vec<AccumNode>, ParserError> {
             accum.add_to_buffer(AccumNodeItem::new(&c, char_kind))
           },
         
-          Math(opt) => match opt {
-            Some(math_char) => match math_char {
-              Multiply => {
-
-              },
-
-              Divide |
-              Add |
-              Subtract => {
-                accum.flush_buffer();
-                accum.add_to_buffer(AccumNodeItem::new(&c, Math(Some(math_char))));
+          Math(math_char) => match math_char {
+            Multiply => {
+              accum.flush_buffer();
+              if let Some(prev_accum_node_item) = accum.get_last_added() {
+                if let Some(prev_char_kind) = categorize_first_of(&prev_accum_node_item.value()) {
+                  if let Math(prev_math_char) = prev_char_kind {
+                    if let Multiply = prev_math_char {
+                      accum.pop_values();
+                      accum.add_to_buffer(AccumNodeItem::new("**", Math(Exponent)));
+                    } else { 
+                      // previous char is a math_char and is NOT mulitply! Bad boy!
+                      return Err(ParserError { kind: Some(AdjacentOperators) });
+                    }
+                  } else { 
+                    // previous char is NOT Math...
+                    accum.add_to_buffer(AccumNodeItem::new(&c, Math(Multiply)));
+                  }
+                }
+              } else { // if last is None
+                accum.add_to_buffer(AccumNodeItem::new(&c, Math(Multiply)));
               }
-
-              _ => {}
+              accum.flush_buffer();
             },
-            None => {},
+
+            Divide |
+            Add |
+            Subtract => {
+              accum.flush_buffer();
+              accum.add_to_buffer(AccumNodeItem::new(&c, Math(math_char)));
+              accum.flush_buffer();
+            }
+
+            _ => {}
           },
 
           Space => {
@@ -109,8 +145,6 @@ fn parse_expression(expr: &str) -> Result<Vec<AccumNode>, ParserError> {
     accum.flush_buffer();
     Ok(accum)
   };
-
-  // let no_spaces = expr.replace(" ", "");
 
   let mut exp_items: Vec<&str> = expr.split("").filter(|&x| !x.is_empty()).collect();
 

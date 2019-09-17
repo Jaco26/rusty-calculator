@@ -96,4 +96,8 @@ impl Accumulator {
       None
     }
   }
+
+  pub fn pop_values(&mut self) -> Option<AccumNode> {
+    self._values.pop()
+  }
 }
