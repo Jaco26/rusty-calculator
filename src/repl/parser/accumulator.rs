@@ -72,6 +72,23 @@ impl Accumulator {
     }
   }
 
+  pub fn lookback_char_kind(&self) -> Option<CharKind> {
+    if let Some(buffer_items) = self._buffer.contents() {
+      if let Some(item) = buffer_items.last() {
+        return Some(item.kind());
+      }
+    } else if let Some(accum_node) = self._values.last() {
+      if let Some(items) = accum_node.contents() {
+        if let Some(item) = items.last() {
+          return Some(item.kind());
+        }
+      }
+    }
+    None
+  }
+
+
+
   pub fn get_last_added(&self) -> Option<AccumNodeItem> {
     if let Some(buffer_items) = self._buffer.contents() {
 
