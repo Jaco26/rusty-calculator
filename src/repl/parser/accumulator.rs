@@ -61,6 +61,12 @@ impl Accumulator {
     }
   }
 
+  pub fn add_item(&mut self, item: AccumNodeItem) {
+    self.flush_buffer();
+    self.add_to_buffer(item);
+    self.flush_buffer();
+  }
+
   pub fn add_to_buffer(&mut self, item: AccumNodeItem) {
     self._buffer.add(item);
   }
@@ -87,21 +93,6 @@ impl Accumulator {
     None
   }
 
-
-
-  pub fn get_last_added(&self) -> Option<AccumNodeItem> {
-    if let Some(buffer_items) = self._buffer.contents() {
-
-      return Some(buffer_items[buffer_items.len() - 1].clone());
-
-    } else if let Some(last) = self._values.last() {
-      
-      if let Some(contents) = last.contents() {
-        return Some(contents[contents.len() - 1].clone());
-      }
-    }
-    None
-  }
 
   pub fn values(&self) -> Option<Vec<AccumNode>> {
     if self._values.len() > 0 {

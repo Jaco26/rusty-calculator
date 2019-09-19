@@ -10,6 +10,7 @@ pub enum MathChar {
 
 #[derive(Debug, Clone)]
 pub enum CharKind {
+  Other,
   Space,
   LeftParen,
   RightParen,
@@ -39,7 +40,7 @@ pub fn categorize_first_of(s: &str) -> Option<CharKind> {
       'A'..='Z' | 
       '_' => Some(Alpha),
       
-      _ => None,
+      _ => Some(Other),
     }
   } else {
     None
