@@ -1,6 +1,5 @@
 #![allow(dead_code, unused_imports, unused_mut, unused_variables)]
 
-mod terminal;
 pub mod parser;
 
 use std::collections::HashMap;
@@ -12,7 +11,7 @@ use parser::UserInput::{
   Empty,
 };
 use terminal::get_input;
-use crate::evaluator::evaluate_expression;
+use crate::evaluator::evaluate;
 
 
 

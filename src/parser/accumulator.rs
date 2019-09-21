@@ -78,7 +78,7 @@ impl Accumulator {
               acc.insert("n_right", acc.get("n_right").unwrap() + 1);
             },
             _ => {},
-          }
+          };
         }
       }
       acc
@@ -98,7 +98,7 @@ impl Accumulator {
   }
 
   pub fn flush_buffer(&mut self) {
-    if let Some(contents) = self._buffer.contents() {
+    if let Some(_) = self._buffer.contents() {
       self._values.push(self._buffer.clone());
       self._buffer = AccumNode::new();
     }

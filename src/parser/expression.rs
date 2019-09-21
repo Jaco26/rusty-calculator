@@ -1,0 +1,98 @@
+use super::{
+  accumulator::{Accumulator, AccumNode, AccumNodeItem},
+  errors::{self, ParserError, ParserErrorKind::*},
+};
+use crate::characters::*;
+
+#[derive(Debug)]
+pub struct Expression(Vec<AccumNode>);
+
+impl Expression {
+  pub fn new(exp: &str) -> Result<Expression, errors::ParserError> {
+    let mut accum = Accumulator::new();
+    let exp_items: Vec<&str> = exp.split("").filter(|&x| !x.is_empty()).collect();
+
+    for (i, c) in exp_items.iter().enumerate() {
+      let c = c.to_string();
+
+      let thing = categorize_first_of(&c);
+
+      if i == exp_items.len() - 1 {
+        match thing {
+          Some(Math(_)) => return Err(ParserError { kind: Some(OperatorEndsScope) }),
+          Some(_) | None => {},
+        };
+      } else if i == 0 {
+        match thing {
+          Some(Math(_)) => return Err(ParserError { kind: Some(OperatorBeginsScope) }),
+          Some(_) | None => {},
+        };
+      }
+      
+      match categorize_first_of(&c) {
+        Some(char_kind) => match char_kind {
+          LeftParen => {
+            // if the item to the left is NOT None and it is NOT Math or RightParen,
+            // buffer and flush a Multiply AccumNodeItem
+            if let Some(prev_accum_node_item) = accum.lookback_char_kind() {
+              match prev_accum_node_item {
+                RightParen | Alpha | Number | Dot => {
+                  accum.add_item(AccumNodeItem::new("*", Math(Multiply)));
+                },
+                Math(_) => return Err(ParserError { kind: Some(OperatorBeginsScope) }),
+                _ => {},
+              };
+            };
+            accum.add_item(AccumNodeItem::new(&c, char_kind));
+          },
+          RightParen => {
+            match accum.lookback_char_kind() {
+              Some(Math(_)) => return Err(ParserError { kind: Some(OperatorEndsScope)}),
+              Some(LeftParen) => return Err(ParserError { kind: Some(EmptyParens) }),
+              Some(_) | None => {},
+            }
+            accum.add_item(AccumNodeItem::new(&c, char_kind));
+          },
+
+          Alpha | Number | Dot  => {
+            accum.add_to_buffer(AccumNodeItem::new(&c, char_kind))
+          },
+        
+          Math(math_char) => match math_char {
+            Multiply => match accum.lookback_char_kind() {
+              Some(Math(Multiply)) => {
+                accum.pop_values();
+                accum.add_item(AccumNodeItem::new("**", Math(Exponent)));
+              },
+              Some(Math(_)) => return Err(ParserError { kind: Some(AdjacentOperators) }),
+              Some(_) | None => accum.add_item(AccumNodeItem::new(&c, Math(Multiply))),
+            },
+
+            Divide | Add | Subtract => {
+              accum.add_item(AccumNodeItem::new(&c, Math(math_char)));
+            },
+            _ => {}
+          },
+          Space => {
+            accum.flush_buffer();
+          },
+          Other => {},
+        },
+        None => {},
+      }
+    }
+    
+    accum.flush_buffer();
+
+    if !accum.parens_are_balanced() {
+      return Err(ParserError { kind: Some(UnbalancedParens) })
+    }
+
+    if let Some(values) = accum.values() {
+      Ok(Expression(values))
+    } else {
+      println!("There is nothing in accum._values");
+      Err(ParserError { kind: None })
+    }
+  } // end Expression::new
+}

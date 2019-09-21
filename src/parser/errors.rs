@@ -9,7 +9,6 @@ pub enum ParserErrorKind {
   OperatorEndsScope,
   UnbalancedParens,
   EmptyParens,
-  EmptyExpression,
 }
 
 #[derive(Debug, Clone)]
