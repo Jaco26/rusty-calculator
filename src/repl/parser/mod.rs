@@ -2,14 +2,7 @@ pub mod errors;
 mod accumulator;
 
 use crate::characters::*;
-use errors::{
-  ParserError, 
-  ParserErrorKind::{
-    BadVarName,
-    AdjacentOperators,
-    EmptyExpression,
-  }
-};
+use errors::{ParserError, ParserErrorKind::*};
 use accumulator::{Accumulator, AccumNode, AccumNodeItem};
 
 #[derive(Debug)]
@@ -63,10 +56,23 @@ fn parse_expression(expr: &str) -> Result<Vec<AccumNode>, ParserError> {
   let mut accum = Accumulator::new();
   let mut exp_items: Vec<&str> = expr.split("").filter(|&x| !x.is_empty()).collect();
 
-  // fn traverse(mut items: Vec<&str>, mut accum: Accumulator) -> Result<Accumulator, ParserError> {
-  for c in exp_items {
+  for (i, c) in exp_items.iter().enumerate() {
     let c = c.to_string();
 
+    let thing = categorize_first_of(&c);
+
+    if i == exp_items.len() - 1 {
+      match thing {
+        Some(Math(_)) => return Err(ParserError { kind: Some(OperatorEndsScope) }),
+        Some(_) | None => {},
+      };
+    } else if i == 0 {
+      match thing {
+        Some(Math(_)) => return Err(ParserError { kind: Some(OperatorBeginsScope) }),
+        Some(_) | None => {},
+      };
+    }
+    
     match categorize_first_of(&c) {
       Some(char_kind) => match char_kind {
         LeftParen => {
@@ -77,12 +83,18 @@ fn parse_expression(expr: &str) -> Result<Vec<AccumNode>, ParserError> {
               RightParen | Alpha | Number | Dot => {
                 accum.add_item(AccumNodeItem::new("*", Math(Multiply)));
               },
+              Math(_) => return Err(ParserError { kind: Some(OperatorBeginsScope) }),
               _ => {},
             };
           };
           accum.add_item(AccumNodeItem::new(&c, char_kind));
         },
         RightParen => {
+          match accum.lookback_char_kind() {
+            Some(Math(_)) => return Err(ParserError { kind: Some(OperatorEndsScope)}),
+            Some(LeftParen) => return Err(ParserError { kind: Some(EmptyParens) }),
+            Some(_) | None => {},
+          }
           accum.add_item(AccumNodeItem::new(&c, char_kind));
         },
 
@@ -92,22 +104,21 @@ fn parse_expression(expr: &str) -> Result<Vec<AccumNode>, ParserError> {
       
         Math(math_char) => match math_char {
           Multiply => match accum.lookback_char_kind() {
-              Some(ck) => match ck {
-                Math(mc) => match mc {
-                  Multiply => {
-                    accum.pop_values();
-                    accum.add_item(AccumNodeItem::new("**", Math(Exponent)));
-                  },
-                  _ => return Err(ParserError { kind: Some(AdjacentOperators) }),
+            Some(ck) => match ck {
+              Math(mc) => match mc {
+                Multiply => {
+                  accum.pop_values();
+                  accum.add_item(AccumNodeItem::new("**", Math(Exponent)));
                 },
-                _ => {
-                  accum.add_item(AccumNodeItem::new(&c, Math(Multiply)));
-                }
+                _ => return Err(ParserError { kind: Some(AdjacentOperators) }),
               },
-              None => {
+              _ => {
                 accum.add_item(AccumNodeItem::new(&c, Math(Multiply)));
-              },
-            // };
+              }
+            },
+            None => {
+              accum.add_item(AccumNodeItem::new(&c, Math(Multiply)));
+            },
           },
 
           Divide | Add | Subtract => {
@@ -123,7 +134,12 @@ fn parse_expression(expr: &str) -> Result<Vec<AccumNode>, ParserError> {
       None => {},
     }
   }
+  
   accum.flush_buffer();
+
+  if !accum.parens_are_balanced() {
+    return Err(ParserError { kind: Some(UnbalancedParens) })
+  }
 
   if let Some(values) = accum.values() {
     Ok(values)

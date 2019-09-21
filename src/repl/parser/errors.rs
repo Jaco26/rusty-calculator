@@ -5,6 +5,10 @@ use std::fmt;
 pub enum ParserErrorKind {
   BadVarName(&'static str),
   AdjacentOperators,
+  OperatorBeginsScope,
+  OperatorEndsScope,
+  UnbalancedParens,
+  EmptyParens,
   EmptyExpression,
 }
 

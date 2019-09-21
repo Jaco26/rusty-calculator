@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::characters::*;
 
 #[derive(Debug, Clone)]
@@ -59,6 +60,31 @@ impl Accumulator {
       _buffer: AccumNode::new(),
       _values: Vec::new(),
     }
+  }
+
+  pub fn parens_are_balanced(&self) -> bool {
+    let mut accum: HashMap<&str, usize> = HashMap::new();
+    accum.insert("n_left", 0);
+    accum.insert("n_right", 0);
+
+    let accum = self._values.iter().fold(accum, |mut acc, x| {
+      if let Some(contents) = x.contents() {
+        if let Some(accum_node_item) = contents.iter().next() { // get the first item of x.contents()
+          match accum_node_item.kind() {
+            LeftParen => {
+              acc.insert("n_left", acc.get("n_left").unwrap() + 1);
+            },
+            RightParen => {
+              acc.insert("n_right", acc.get("n_right").unwrap() + 1);
+            },
+            _ => {},
+          }
+        }
+      }
+      acc
+    });
+
+    accum.get("n_left").unwrap() == accum.get("n_right").unwrap()
   }
 
   pub fn add_item(&mut self, item: AccumNodeItem) {
