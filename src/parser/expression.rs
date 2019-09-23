@@ -1,11 +1,11 @@
 use super::{
-  accumulator::{Accumulator, AccumNode, AccumNodeItem},
+  accumulator::{Accumulator, ExpressionNode, ExpressionNodeItem},
   errors::{self, ParserError, ParserErrorKind::*},
 };
 use crate::characters::*;
 
 #[derive(Debug)]
-pub struct Expression(Vec<AccumNode>);
+pub struct Expression(Vec<ExpressionNode>);
 
 impl Expression {
   pub fn new(exp: &str) -> Result<Expression, errors::ParserError> {
@@ -33,17 +33,17 @@ impl Expression {
         Some(char_kind) => match char_kind {
           LeftParen => {
             // if the item to the left is NOT None and it is NOT Math or RightParen,
-            // buffer and flush a Multiply AccumNodeItem
+            // buffer and flush a Multiply ExpressionNodeItem
             if let Some(prev_accum_node_item) = accum.lookback_char_kind() {
               match prev_accum_node_item {
                 RightParen | Alpha | Number | Dot => {
-                  accum.add_item(AccumNodeItem::new("*", Math(Multiply)));
+                  accum.add_item(ExpressionNodeItem::new("*", Math(Multiply)));
                 },
                 Math(_) => return Err(ParserError { kind: Some(OperatorBeginsScope) }),
                 _ => {},
               };
             };
-            accum.add_item(AccumNodeItem::new(&c, char_kind));
+            accum.add_item(ExpressionNodeItem::new(&c, char_kind));
           },
           RightParen => {
             match accum.lookback_char_kind() {
@@ -51,25 +51,25 @@ impl Expression {
               Some(LeftParen) => return Err(ParserError { kind: Some(EmptyParens) }),
               Some(_) | None => {},
             }
-            accum.add_item(AccumNodeItem::new(&c, char_kind));
+            accum.add_item(ExpressionNodeItem::new(&c, char_kind));
           },
 
           Alpha | Number | Dot  => {
-            accum.add_to_buffer(AccumNodeItem::new(&c, char_kind))
+            accum.add_to_buffer(ExpressionNodeItem::new(&c, char_kind))
           },
         
           Math(math_char) => match math_char {
             Multiply => match accum.lookback_char_kind() {
               Some(Math(Multiply)) => {
                 accum.pop_values();
-                accum.add_item(AccumNodeItem::new("**", Math(Exponent)));
+                accum.add_item(ExpressionNodeItem::new("**", Math(Exponent)));
               },
               Some(Math(_)) => return Err(ParserError { kind: Some(AdjacentOperators) }),
-              Some(_) | None => accum.add_item(AccumNodeItem::new(&c, Math(Multiply))),
+              Some(_) | None => accum.add_item(ExpressionNodeItem::new(&c, Math(Multiply))),
             },
 
             Divide | Add | Subtract => {
-              accum.add_item(AccumNodeItem::new(&c, Math(math_char)));
+              accum.add_item(ExpressionNodeItem::new(&c, Math(math_char)));
             },
             _ => {}
           },

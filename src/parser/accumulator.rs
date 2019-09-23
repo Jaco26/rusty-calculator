@@ -2,14 +2,14 @@ use std::collections::HashMap;
 use crate::characters::*;
 
 #[derive(Debug, Clone)]
-pub struct AccumNodeItem {
+pub struct ExpressionNodeItem {
   _value: String,
   _kind: CharKind,
 }
 
-impl AccumNodeItem {
-  pub fn new(val: &str, kind: CharKind) -> AccumNodeItem {
-    AccumNodeItem {
+impl ExpressionNodeItem {
+  pub fn new(val: &str, kind: CharKind) -> ExpressionNodeItem {
+    ExpressionNodeItem {
       _value: String::from(val),
       _kind: kind,
     }
@@ -24,22 +24,22 @@ impl AccumNodeItem {
 
 
 #[derive(Debug, Clone)]
-pub struct AccumNode {
-  _contents: Vec<AccumNodeItem>,
+pub struct ExpressionNode {
+  _contents: Vec<ExpressionNodeItem>,
 }
 
-impl AccumNode {
-  pub fn new() -> AccumNode {
-    AccumNode {
+impl ExpressionNode {
+  pub fn new() -> ExpressionNode {
+    ExpressionNode {
       _contents: Vec::new(),
     }
   }
-  pub fn add(&mut self, item: AccumNodeItem) {
+  pub fn add(&mut self, item: ExpressionNodeItem) {
     self._contents.push(item);
   }
-  pub fn contents(&self) -> Option<Vec<AccumNodeItem>> {
+  pub fn contents(&self) -> Option<Vec<ExpressionNodeItem>> {
     if self._contents.len() > 0 {
-      let contents: Vec<AccumNodeItem> = self._contents.iter()
+      let contents: Vec<ExpressionNodeItem> = self._contents.iter()
         .map(|item| item.clone())
         .collect();
 
@@ -50,14 +50,14 @@ impl AccumNode {
 }
 
 pub struct Accumulator {
-  _buffer: AccumNode,
-  _values: Vec<AccumNode>
+  _buffer: ExpressionNode,
+  _values: Vec<ExpressionNode>
 }
 
 impl Accumulator {
   pub fn new() -> Accumulator {
     Accumulator {
-      _buffer: AccumNode::new(),
+      _buffer: ExpressionNode::new(),
       _values: Vec::new(),
     }
   }
@@ -87,20 +87,20 @@ impl Accumulator {
     accum.get("n_left").unwrap() == accum.get("n_right").unwrap()
   }
 
-  pub fn add_item(&mut self, item: AccumNodeItem) {
+  pub fn add_item(&mut self, item: ExpressionNodeItem) {
     self.flush_buffer();
     self.add_to_buffer(item);
     self.flush_buffer();
   }
 
-  pub fn add_to_buffer(&mut self, item: AccumNodeItem) {
+  pub fn add_to_buffer(&mut self, item: ExpressionNodeItem) {
     self._buffer.add(item);
   }
 
   pub fn flush_buffer(&mut self) {
     if let Some(_) = self._buffer.contents() {
       self._values.push(self._buffer.clone());
-      self._buffer = AccumNode::new();
+      self._buffer = ExpressionNode::new();
     }
   }
 
@@ -119,10 +119,9 @@ impl Accumulator {
     None
   }
 
-
-  pub fn values(&self) -> Option<Vec<AccumNode>> {
+  pub fn values(&self) -> Option<Vec<ExpressionNode>> {
     if self._values.len() > 0 {
-      let collected: Vec<AccumNode> = self._values.iter()
+      let collected: Vec<ExpressionNode> = self._values.iter()
         .map(|x| x.clone())
         .collect();
       Some(collected)
@@ -131,7 +130,7 @@ impl Accumulator {
     }
   }
 
-  pub fn pop_values(&mut self) -> Option<AccumNode> {
+  pub fn pop_values(&mut self) -> Option<ExpressionNode> {
     self._values.pop()
   }
 }

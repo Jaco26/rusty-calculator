@@ -3,8 +3,8 @@ use super::expression::Expression;
 
 #[derive(Debug)]
 pub struct UserInput {
-  assign_to: Option<String>,
-  expression: Expression,
+  pub assign_to: Option<String>,
+  pub expression: Expression,
 }
 
 impl UserInput {

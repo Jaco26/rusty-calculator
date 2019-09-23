@@ -7,8 +7,8 @@ mod accumulator;
 use std::io::{self, Write};
 use crate::characters::*;
 use errors::{ParserError, ParserErrorKind::*};
-use user_input::UserInput;
-use expression::Expression;
+pub use expression::Expression;
+pub use user_input::UserInput;
 
 
 pub struct UserInputParser {
@@ -53,7 +53,7 @@ impl UserInputParser {
         .trim()
         .to_string();
 
-      var_name_is_valid(&assign_to)?;
+      self.var_name_is_valid(&assign_to)?;
 
       let expression = Expression::new(exp_text)?;
 
@@ -65,77 +65,42 @@ impl UserInputParser {
 
       return Ok(Some(UserInput::new(None, expression)));
     }
-  }
-}
-
-// impl UserInput {
-//   pub fn new(txt: &str) -> Result<Option<UserInput>, errors::ParserError> {
-//     let txt = txt.trim().to_string();
-    
-//     if txt.is_empty() || txt == "=" {
-//       return Ok(None);
-//     }
-
-//     let mut split = txt.split("=");
-
-//     let left = split.next();
-//     let right = split.next();
-
-//     if let Some(exp_text) = right {
-//       let assign_to = left.unwrap_or_else(|| "")
-//         .trim()
-//         .to_string();
-
-//       var_name_is_valid(&assign_to)?;
-
-//       return Ok(
-//         Some(UserInput {
-//           assign_to: Some(assign_to),
-//           expression: Expression::new(exp_text)?,
-//         })
-//       )
-//     } else {
-//       let exp_text = right.unwrap_or_else(|| "").trim();
-//       return Ok(Some(UserInput {
-//         assign_to: None,
-//         expression: Expression::new(exp_text)?,
-//       }));
-//     }
-//   }
-// }
+  } // end parse
 
 
-
-
-fn var_name_is_valid(var_name: &str) -> Result<(), ParserError> {
-  match categorize_first_of(var_name) {
-    Some(val) => match val {
-      Number => return Err(ParserError { kind: Some(BadVarName("variable names cannot start with numbers!")) }),
-      
-      Math(_) | 
-      Dot | 
-      LeftParen | 
-      RightParen => return Err(ParserError { kind: Some(BadVarName("variable names cannot include any reserved characters")) }),
-      
-      Alpha | Space | Other => {},
-    },
-    None => {},
-  }
-
-  for c in var_name.split("") {
-    match categorize_first_of(c) {
+  fn var_name_is_valid(&self, var_name: &str) -> Result<(), ParserError> {
+    match categorize_first_of(var_name) {
       Some(val) => match val {
+        Number => return Err(ParserError { kind: Some(BadVarName("variable names cannot start with numbers!")) }),
+        
         Math(_) | 
         Dot | 
-        Space | 
         LeftParen | 
-        RightParen => return Err(ParserError { kind: Some(BadVarName("variable names cannot include any reserved characters or spaces")) }),
+        RightParen => return Err(ParserError { kind: Some(BadVarName("variable names cannot include any reserved characters")) }),
         
-        Alpha | Number | Other  => {},
+        Alpha | Space | Other => {},
       },
       None => {},
     }
-  }
 
-  Ok(())
+    for c in var_name.split("") {
+      match categorize_first_of(c) {
+        Some(val) => match val {
+          Math(_) | 
+          Dot | 
+          Space | 
+          LeftParen | 
+          RightParen => return Err(ParserError { kind: Some(BadVarName("variable names cannot include any reserved characters or spaces")) }),
+          
+          Alpha | Number | Other  => {},
+        },
+        None => {},
+      }
+    }
+
+    Ok(())
+  } // end var_name_is_valid
 }
+
+
+
