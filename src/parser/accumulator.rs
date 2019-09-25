@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use crate::characters::*;
+use crate::enums::{CharKind, CharKind::*};
+
 
 #[derive(Debug, Clone)]
 pub struct ExpressionNodeItem {
@@ -39,11 +40,7 @@ impl ExpressionNode {
   }
   pub fn contents(&self) -> Option<Vec<ExpressionNodeItem>> {
     if self._contents.len() > 0 {
-      let contents: Vec<ExpressionNodeItem> = self._contents.iter()
-        .map(|item| item.clone())
-        .collect();
-
-      return Some(contents);
+      return Some(self._contents.clone());
     }
     None
   }

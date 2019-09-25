@@ -95,4 +95,8 @@ impl Expression {
       Err(ParserError { kind: None })
     }
   } // end Expression::new
+
+  pub fn pop(&mut self) -> Option<ExpressionNode> {
+    self.0.pop()
+  }
 }

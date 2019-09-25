@@ -1,4 +1,5 @@
 mod characters;
+mod enums;
 mod parser;
 mod evaluator;
 

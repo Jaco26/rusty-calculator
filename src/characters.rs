@@ -1,27 +1,6 @@
 
-#[derive(Debug, Clone)]
-pub enum MathChar {
-  Exponent,
-  Multiply,
-  Divide,
-  Add,
-  Subtract,
-}
-
-#[derive(Debug, Clone)]
-pub enum CharKind {
-  Other,
-  Space,
-  LeftParen,
-  RightParen,
-  Dot,
-  Alpha,
-  Number,
-  Math(MathChar)
-}
-
-pub use MathChar::*;
-pub use CharKind::*;
+pub use crate::enums::{CharKind, CharKind::*};
+pub use crate::enums::{Operator, Operator::*};
 
 pub fn categorize_first_of(s: &str) -> Option<CharKind> {
   if let Some(c) = s.chars().next() {

@@ -1,11 +1,13 @@
+// from std
+use std::io::{self, Write};
+// from crate
+use crate::characters::*;
+// child mods
 mod errors;
 mod expression;
 mod user_input;
 mod accumulator;
-
-
-use std::io::{self, Write};
-use crate::characters::*;
+// from child mods
 use errors::{ParserError, ParserErrorKind::*};
 pub use expression::Expression;
 pub use user_input::UserInput;
