@@ -99,4 +99,8 @@ impl Expression {
   pub fn pop(&mut self) -> Option<ExpressionNode> {
     self.0.pop()
   }
+
+  pub fn len(&self) -> usize {
+    self.0.len()
+  }
 }

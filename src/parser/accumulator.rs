@@ -38,11 +38,8 @@ impl ExpressionNode {
   pub fn add(&mut self, item: ExpressionNodeItem) {
     self._contents.push(item);
   }
-  pub fn contents(&self) -> Option<Vec<ExpressionNodeItem>> {
-    if self._contents.len() > 0 {
-      return Some(self._contents.clone());
-    }
-    None
+  pub fn contents(&self) -> Vec<ExpressionNodeItem> {
+    self._contents.clone()
   }
 }
 
@@ -65,18 +62,16 @@ impl Accumulator {
     accum.insert("n_right", 0);
 
     let accum = self._values.iter().fold(accum, |mut acc, x| {
-      if let Some(contents) = x.contents() {
-        if let Some(accum_node_item) = contents.iter().next() { // get the first item of x.contents()
-          match accum_node_item.kind() {
-            LeftParen => {
-              acc.insert("n_left", acc.get("n_left").unwrap() + 1);
-            },
-            RightParen => {
-              acc.insert("n_right", acc.get("n_right").unwrap() + 1);
-            },
-            _ => {},
-          };
-        }
+      if let Some(accum_node_item) = x._contents.iter().next() {
+        match accum_node_item.kind() {
+          LeftParen => {
+            acc.insert("n_left", acc.get("n_left").unwrap() + 1);
+          },
+          RightParen => {
+            acc.insert("n_right", acc.get("n_right").unwrap() + 1);
+          },
+          _ => {},
+        };
       }
       acc
     });
@@ -95,22 +90,20 @@ impl Accumulator {
   }
 
   pub fn flush_buffer(&mut self) {
-    if let Some(_) = self._buffer.contents() {
+    if self._buffer.contents().len() > 0 {
       self._values.push(self._buffer.clone());
       self._buffer = ExpressionNode::new();
     }
   }
 
   pub fn lookback_char_kind(&self) -> Option<CharKind> {
-    if let Some(buffer_items) = self._buffer.contents() {
-      if let Some(item) = buffer_items.last() {
+    if let Some(item) = self._buffer.contents().last() {
+      return Some(item.kind());
+    }
+
+    if let Some(accum_node) = self._values.last() {
+      if let Some(item) = accum_node.contents().last() {
         return Some(item.kind());
-      }
-    } else if let Some(accum_node) = self._values.last() {
-      if let Some(items) = accum_node.contents() {
-        if let Some(item) = items.last() {
-          return Some(item.kind());
-        }
       }
     }
     None

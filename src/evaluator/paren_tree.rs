@@ -9,8 +9,14 @@ use crate::enums::{
 // from parent mod
 use super::errors::EvaluationError;
 
+
+enum ParenNodeItem {
+  EvaluationItem,
+  ParenNode,
+}
+
 struct ParenNode {
-  items: Vec<EvaluationItem>,
+  items: Vec<ParenNodeItem>,
 }
 
 impl ParenNode {
@@ -26,25 +32,30 @@ pub struct ParenTree {
 }
 
 impl ParenTree {
-  // pub fn from(expression: Expression) -> Result<ParenTree, EvaluationError> {
+  pub fn from(expression: Expression) -> Result<ParenTree, EvaluationError> {
     
-  //   fn traverse_expression(expr: Expression) {
-  //     let node = ParenNode::new();
+    fn traverse_expression(expr: Expression) -> ParenNode {
+      let node = ParenNode::new();
 
-  //     if let Some(exp_node) = expr.pop() {
-  //       if let Some(contents) = exp_node.contents() {
+      loop {
+        if let Some(exp_node) = expr.pop() {
+          if exp_node.contents().iter().all(|x| match x.kind() { Operator => true }) { // if all contents are Operator
+            // node.items.push(EvaluationItem::Math());
+          } else if true {
 
-  //         if contents.iter().all(|x| match x.kind() { Operator => true }) { // if all contents are Operator
-  //           // node.items.push(EvaluationItem::Math());
-  //         } else if true {
+          }
 
-  //         }
+          // }
+        } else {
+          break;
+        }
+      }
 
-  //       }
-  //     }
-  //   }
+      node
+    }
+  
+  }
 
-  // }
 }
 
 // fn categorize_expression_node
