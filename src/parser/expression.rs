@@ -4,8 +4,12 @@ use super::{
 };
 use crate::characters::*;
 
-#[derive(Debug)]
-pub struct Expression(Vec<ExpressionNode>);
+#[derive(Debug, Clone)]
+pub struct Expression {
+  _nodes: Vec<ExpressionNode>,
+  _idx: usize,
+}
+// pub struct Expression(Vec<ExpressionNode>);
 
 impl Expression {
   pub fn new(exp: &str) -> Result<Expression, errors::ParserError> {
@@ -89,18 +93,27 @@ impl Expression {
     }
 
     if let Some(values) = accum.values() {
-      Ok(Expression(values))
+      Ok(Expression {
+        _nodes: values,
+        _idx: 0,
+      })
     } else {
       println!("There is nothing in accum._values");
       Err(ParserError { kind: None })
     }
   } // end Expression::new
+}
 
-  pub fn pop(&mut self) -> Option<ExpressionNode> {
-    self.0.pop()
-  }
 
-  pub fn len(&self) -> usize {
-    self.0.len()
+impl Iterator for Expression {
+  type Item = ExpressionNode;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    if self._idx < self._nodes.len() {
+      let x = self._nodes[self._idx].clone();
+      self._idx += 1;
+      return Some(x);
+    }
+    None
   }
 }

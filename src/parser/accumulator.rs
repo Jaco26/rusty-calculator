@@ -1,5 +1,9 @@
 use std::collections::HashMap;
-use crate::enums::{CharKind, CharKind::*};
+use crate::enums::{
+  CharKind, 
+  CharKind::*,
+  EvaluationItem,
+};
 
 
 #[derive(Debug, Clone)]
@@ -40,6 +44,25 @@ impl ExpressionNode {
   }
   pub fn contents(&self) -> Vec<ExpressionNodeItem> {
     self._contents.clone()
+  }
+  pub fn to_evaluation_item(&self) -> Option<EvaluationItem> {
+    let s = String::new();
+    let value_str = self._contents.iter().fold(s, |acc, item| acc + &item.value());
+
+    match self._contents.iter().next() {
+      Some(item) => match item.kind() {
+        Math(op) => Some(EvaluationItem::Math(op)),
+        Alpha => Some(EvaluationItem::StoredVariable(value_str)),
+        Number => Some(EvaluationItem::Float(value_str.parse::<f64>().unwrap())),
+        LeftParen => Some(EvaluationItem::LeftParen),
+        RightParen => Some(EvaluationItem::RightParen),
+        _ => {
+          println!("failed to convert ExpressionNode to EvaluationItem");
+          None
+        }
+      },
+      None => None
+    }
   }
 }
 

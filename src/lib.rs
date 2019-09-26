@@ -24,7 +24,7 @@ pub fn run() {
       None
     });
 
-    println!("UserInput: {:#?}", user_input);
+    // println!("UserInput: {:#?}", user_input);
 
     if let Some(UserInput { assign_to, expression }) = user_input {
       let evaluation_result = evaluator::evaluate(expression, &evaluated).unwrap_or_else(|err| {

@@ -1,5 +1,5 @@
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Operator {
   Exponent,
   Multiply,
@@ -8,7 +8,7 @@ pub enum Operator {
   Subtract,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CharKind {
   Other,
   Space,
@@ -25,6 +25,8 @@ pub enum EvaluationItem {
   Float(f64),
   StoredVariable(String),
   Math(Operator),
+  LeftParen,
+  RightParen,
 }
 
 // pub use Operator::*;

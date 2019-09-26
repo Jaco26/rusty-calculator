@@ -2,19 +2,20 @@
 // from crate
 use crate::parser::Expression;
 use crate::enums::{
-  CharKind,
-  Operator,
+  // CharKind,
+  // Operator,
   EvaluationItem,
+  EvaluationItem::*
 };
-// from parent mod
-use super::errors::EvaluationError;
 
-
+#[derive(Debug)]
 enum ParenNodeItem {
-  EvaluationItem,
-  ParenNode,
+  EvalItem(EvaluationItem),
+  Paren(ParenNode),
 }
 
+
+#[derive(Debug)]
 struct ParenNode {
   items: Vec<ParenNodeItem>,
 }
@@ -25,54 +26,71 @@ impl ParenNode {
       items: Vec::new(),
     }
   }
+  pub fn add(&mut self, item: ParenNodeItem) {
+    self.items.push(item);
+  }
 }
 
+
+struct ParenChildrenStack {
+  _items: Vec<ParenNode>,
+}
+
+impl ParenChildrenStack {
+  fn new() -> ParenChildrenStack {
+    ParenChildrenStack {
+      _items: vec![],
+    }
+  }
+  fn push(&mut self, value: ParenNode) {
+    self._items.push(value);
+  }
+  fn pop(&mut self) -> Option<ParenNode> {
+    self._items.pop()
+  }
+  fn add_to_last(&mut self, item: ParenNodeItem) {
+    if let Some(node) = self._items.last_mut() {
+      node.add(item);
+    }
+  }
+}
+
+#[derive(Debug)]
 pub struct ParenTree {
   root: ParenNode
 }
 
 impl ParenTree {
-  pub fn from(expression: Expression) -> Result<ParenTree, EvaluationError> {
+  pub fn from_expression(expression: Expression) -> Option<ParenTree> {
+
+    let mut stack = ParenChildrenStack::new();
+
+    stack.push(ParenNode::new());
     
-    fn traverse_expression(expr: Expression) -> ParenNode {
-      let node = ParenNode::new();
-
-      loop {
-        if let Some(exp_node) = expr.pop() {
-          if exp_node.contents().iter().all(|x| match x.kind() { Operator => true }) { // if all contents are Operator
-            // node.items.push(EvaluationItem::Math());
-          } else if true {
-
+    for x in expression {
+      if let Some(eval_item) = x.to_evaluation_item() {
+         match eval_item {
+          Float(_) |
+          StoredVariable(_) |
+          Math(_) => {
+            let item = ParenNodeItem::EvalItem(eval_item);
+            stack.add_to_last(item);
+          },
+          LeftParen => {
+            stack.push(ParenNode::new());
+          },
+          RightParen => {
+            if let Some(paren_node) = stack.pop() {
+              stack.add_to_last(ParenNodeItem::Paren(paren_node));
+            }
           }
-
-          // }
-        } else {
-          break;
         }
       }
-
-      node
     }
-  
+
+    if let Some(root) = stack.pop() {
+      return Some(ParenTree { root });
+    };
+    None
   }
-
 }
-
-// fn categorize_expression_node
-
-//  def parse_char_list(self, char_list: list):
-//     def traverse_list(lst: list):
-//       node = ParenNode()
-//       while len(lst):
-//         char = lst.pop(0)
-//         if char == LEFT_PAREN:
-//           paren_node_item = traverse_list(lst)
-//           node.items.append(paren_node_item)
-//         elif char == RIGHT_PAREN:
-//           return node
-//         else:
-//           node.items.append(char)
-//       return node
-    
-//     self.root = traverse_list(char_list)
-  
