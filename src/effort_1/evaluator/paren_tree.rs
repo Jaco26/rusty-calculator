@@ -1,22 +1,23 @@
-
+// from std
+use std::collections::HashMap;
 // from crate
 use crate::parser::Expression;
 use crate::enums::{
-  // CharKind,
-  // Operator,
   EvaluationItem,
   EvaluationItem::*
 };
+// from parent mod
+use super::errors::EvaluationError;
 
 #[derive(Debug)]
-enum ParenNodeItem {
+pub enum ParenNodeItem {
   EvalItem(EvaluationItem),
   Paren(ParenNode),
 }
 
 
 #[derive(Debug)]
-struct ParenNode {
+pub struct ParenNode {
   items: Vec<ParenNodeItem>,
 }
 
@@ -28,6 +29,7 @@ impl ParenNode {
   }
   pub fn add(&mut self, item: ParenNodeItem) {
     self.items.push(item);
+
   }
 }
 
@@ -57,7 +59,7 @@ impl ParenChildrenStack {
 
 #[derive(Debug)]
 pub struct ParenTree {
-  root: ParenNode
+  pub root: ParenNode
 }
 
 impl ParenTree {

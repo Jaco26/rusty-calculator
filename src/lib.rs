@@ -1,40 +1,25 @@
-mod characters;
 mod enums;
 mod parser;
-mod evaluator;
 
-use std::collections::HashMap;
-use parser::{UserInput, UserInputParser};
+use std::io::{self, Write};
 
 pub fn run() {
-  let mut parser = UserInputParser::new();
-
-  let mut history = Vec::new();
-
-  let mut evaluated: HashMap<String, f64> = HashMap::new();
-
   loop {
-    parser.get_input()
-      .expect("Error getting input from terminal");
-
-    history.push(parser.text_copy());
-
-    let mut user_input = parser.parse().unwrap_or_else(|err| {
-      eprintln!("{:?}", err);
-      None
+    let input = get_user_input().unwrap_or_else(|err| {
+      eprintln!("[error getting user input] {:?}", err);
+      std::process::exit(1);
     });
 
-    // println!("UserInput: {:#?}", user_input);
-
-    if let Some(UserInput { assign_to, expression }) = user_input {
-      let evaluation_result = evaluator::evaluate(expression, &evaluated).unwrap_or_else(|err| {
-        println!("{:?}", err);
-        0.0
-      });
-      if let Some(name) = assign_to {
-        &evaluated.insert(name, evaluation_result);
-      }
-    }
-
+    println!("You said ({} chars): {}", input.len(), input);
   }
+}
+
+
+fn get_user_input() -> Result<String, io::Error> {
+  print!("> ");
+  io::stdout().flush()?;
+  let mut rv = String::new();
+  io::stdin().read_line(&mut rv)?;
+  rv.pop();
+  Ok(rv.trim().to_string())
 }

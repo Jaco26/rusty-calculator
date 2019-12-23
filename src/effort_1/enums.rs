@@ -1,5 +1,6 @@
+
 #[derive(Debug, Clone, PartialEq)]
-pub enum MathOperator {
+pub enum Operator {
   Exponent,
   Multiply,
   Divide,
@@ -16,14 +17,19 @@ pub enum CharKind {
   Dot,
   Alpha,
   Number,
-  Operator(MathOperator)
+  Math(Operator),
 }
 
 #[derive(Debug, Clone)]
-pub enum ExpressionNode {
+pub enum EvaluationItem {
   Float(f64),
-  VariableName(String),
-  Operator(MathOperator),
+  StoredVariable(String),
+  Math(Operator),
   LeftParen,
   RightParen,
 }
+
+// pub use Operator::*;
+// pub use CharKind::*;
+// pub use EvaluationItem::*;
+

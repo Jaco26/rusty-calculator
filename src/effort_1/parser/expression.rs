@@ -43,7 +43,7 @@ impl Expression {
                 RightParen | Alpha | Number | Dot => {
                   accum.add_item(ExpressionNodeItem::new("*", Math(Multiply)));
                 },
-                Math(_) => return Err(ParserError { kind: Some(OperatorBeginsScope) }),
+                // Math(_) => return Err(ParserError { kind: Some(OperatorBeginsScope) }),
                 _ => {},
               };
             };
