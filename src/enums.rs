@@ -20,7 +20,7 @@ pub enum CharKind {
 }
 
 #[derive(Debug, Clone)]
-pub enum ExpressionNode {
+pub enum ExpressionNodeKind {
   Float(f64),
   VariableName(String),
   Operator(MathOperator),
