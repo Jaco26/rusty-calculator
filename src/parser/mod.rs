@@ -1,11 +1,13 @@
+mod expression_tree;
 
 use crate::enums::{CharKind, MathOperator, ExpressionNodeKind};
 use crate::errors::SyntaxError;
 
+use expression_tree::ExpressionTree;
 
-pub fn parse(input: &str) {
+pub fn parse(input: &str) -> Result<Option<ExpressionTree>, SyntaxError> {
 
-  let mut accum = Accum::new();
+  let mut accum = ExpressionAccumulator::new();
 
   for (i, ch) in input.char_indices() {
     match categorize_char(ch) {
@@ -45,7 +47,7 @@ pub fn parse(input: &str) {
         match math_op {
           MathOperator::Multiply => {
             if let Some(last_item) = accum.items.last() {
-              if let Some(ExpressionNodeKind::Operator(MathOperator::Multiply)) = last_item.kind {
+              if let ExpressionNodeKind::Operator(MathOperator::Multiply) = last_item.kind {
                 accum.buffer.set_kind(ExpressionNodeKind::Operator(MathOperator::Exponent));
                 accum.buffer.value.push_str("**");
                 accum.items.pop();
@@ -85,15 +87,23 @@ pub fn parse(input: &str) {
     }
   }
 
-  let result: Vec<AccumNode> = accum.items.iter().fold(Vec::new(), |mut acc, x| {
-    if let Some(kind) = x.kind.clone() {
-      if kind != ExpressionNodeKind::Space {
-        acc.push(x.clone());
-      }
+  let expression_nodes: Vec<ExpressionNode> = accum.items.iter().fold(Vec::new(), |mut acc, x| {
+    match x.kind {
+      ExpressionNodeKind::Init |
+      ExpressionNodeKind::Space => {},
+
+      _ => acc.push(x.clone()),
     }
     acc
   });
-  println!("{:#?}", result);
+
+  let mut tree = ExpressionTree::new();
+
+  tree.parse(expression_nodes)?;
+
+  println!("{:#?}", tree);
+
+  Ok(Some(tree))
 }
 
 
@@ -118,42 +128,45 @@ fn categorize_char(c: char) -> CharKind {
 }
 
 #[derive(Debug, Clone)]
-struct AccumNode {
-  kind: Option<ExpressionNodeKind>,
+pub struct ExpressionNode {
+  kind: ExpressionNodeKind,
   value: String,
 }
 
-impl AccumNode {
-  fn new() ->  AccumNode{
-    AccumNode {
-      kind: None,
+impl ExpressionNode {
+  fn new() ->  ExpressionNode{
+    ExpressionNode {
+      kind: ExpressionNodeKind::Init,
       value: String::new(),
     }
   }
   fn set_kind(&mut self, t: ExpressionNodeKind) {
-    if let None = self.kind {
-      self.kind = Some(t);
+    if let ExpressionNodeKind::Init = self.kind {
+      self.kind = t;
     }
   }
 }
 
 
 #[derive(Debug, Clone)]
-struct Accum {
-  buffer: AccumNode,
-  items: Vec<AccumNode>
+struct ExpressionAccumulator {
+  buffer: ExpressionNode,
+  items: Vec<ExpressionNode>,
 }
 
-impl Accum {
-  fn new() -> Accum {
-    Accum {
-      buffer: AccumNode::new(),
+impl ExpressionAccumulator {
+  fn new() -> ExpressionAccumulator {
+    ExpressionAccumulator {
+      buffer: ExpressionNode::new(),
       items: Vec::new(),
     }
   }
 
   fn flush_buffer(&mut self) {
     self.items.push(self.buffer.clone());
-    self.buffer = AccumNode::new();
+    self.buffer = ExpressionNode::new();
   }
 }
+
+
+

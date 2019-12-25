@@ -18,7 +18,14 @@ pub fn run() {
       std::process::exit(1);
     });
 
-    parser::parse(&raw_input);
+    let parse_result = parser::parse(&raw_input).unwrap_or_else(|err| {
+      eprintln!("{:#?}", err);
+      None
+    });
+
+    // if let Some(tree) = parse_result {
+    //   println!("{:#?}", tree);
+    // }
 
   }
 }

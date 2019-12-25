@@ -27,4 +27,5 @@ pub enum ExpressionNodeKind {
   LeftParen,
   RightParen,
   Space,
+  Init,
 }
