@@ -1,14 +1,11 @@
 #![allow(dead_code, unused_imports, unused_variables, unused_mut)]
 
-mod structs;
 mod enums;
 mod errors;
 mod parser;
 
 use std::io::{self, Write};
 use std::collections::HashMap;
-
-use parser::UserInputParser;
 
 
 pub fn run() {
@@ -21,16 +18,7 @@ pub fn run() {
       std::process::exit(1);
     });
 
-    let mut parser = UserInputParser::new();
-
-    let parsed_input = parser.parse(&raw_input).unwrap_or_else(|err| {
-      eprintln!("{:#?}", err);
-      None
-    });
-
-    if let Some(tree) = parsed_input {
-      println!("{:#?}", tree);
-    }
+    parser::parse(&raw_input);
 
   }
 }

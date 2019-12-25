@@ -29,7 +29,3 @@ pub enum EvaluationItem {
   RightParen,
 }
 
-// pub use Operator::*;
-// pub use CharKind::*;
-// pub use EvaluationItem::*;
-

@@ -19,11 +19,12 @@ pub enum CharKind {
   Operator(MathOperator)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExpressionNodeKind {
-  Float(f64),
-  VariableName(String),
+  Float,
+  VariableName,
   Operator(MathOperator),
   LeftParen,
   RightParen,
+  Space,
 }
