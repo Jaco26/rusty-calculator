@@ -3,6 +3,7 @@
 mod enums;
 mod errors;
 mod parser;
+mod evaluator;
 
 use std::io::{self, Write};
 use std::collections::HashMap;
@@ -23,10 +24,21 @@ pub fn run() {
       None
     });
 
-    // if let Some(tree) = parse_result {
-    //   println!("{:#?}", tree);
-    // }
+    if let Some(tree) = parse_result {
+      if let Some(root) = tree.root {
 
+        println!("{:#?}", root);
+
+        // let result = evaluator::evaluate(root).unwrap_or_else(|err| {
+        //   eprintln!("{:#?}", err);
+        //   None
+        // });
+
+        // if let Some(result) = result {
+        //   println!("Result: {}", result);
+        // }
+      }
+    }
   }
 }
 

@@ -3,7 +3,7 @@ use crate::parser::ExpressionNode;
 use crate::enums::ExpressionNodeKind;
 
 #[derive(Debug, Clone)]
-enum ExpressionTreeNodeItem {
+pub enum ExpressionTreeNodeItem {
   Child(ExpressionNode),
   Parent(ExpressionTreeNode),
 }
@@ -11,8 +11,8 @@ enum ExpressionTreeNodeItem {
 
 
 #[derive(Debug, Clone)]
-struct ExpressionTreeNode {
-  items: Vec<ExpressionTreeNodeItem>
+pub struct ExpressionTreeNode {
+  pub items: Vec<ExpressionTreeNodeItem>
 }
 
 impl ExpressionTreeNode {
@@ -30,7 +30,7 @@ impl ExpressionTreeNode {
 
 #[derive(Debug, Clone)]
 pub struct ExpressionTree {
-  root: Option<ExpressionTreeNode>,
+  pub root: Option<ExpressionTreeNode>,
 }
 
 impl ExpressionTree {

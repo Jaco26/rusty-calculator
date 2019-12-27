@@ -1,4 +1,4 @@
-mod expression_tree;
+pub mod expression_tree;
 
 use crate::enums::{CharKind, MathOperator, ExpressionNodeKind};
 use crate::errors::SyntaxError;
@@ -87,21 +87,27 @@ pub fn parse(input: &str) -> Result<Option<ExpressionTree>, SyntaxError> {
     }
   }
 
+  let mut id = 1;
+
   let expression_nodes: Vec<ExpressionNode> = accum.items.iter().fold(Vec::new(), |mut acc, x| {
     match x.kind {
       ExpressionNodeKind::Init |
       ExpressionNodeKind::Space => {},
 
-      _ => acc.push(x.clone()),
+      _ => {
+        let mut x = x.clone();
+        x.id = id;
+        id += 1;
+        acc.push(x);
+      },
     }
+
     acc
   });
 
   let mut tree = ExpressionTree::new();
 
   tree.parse(expression_nodes)?;
-
-  println!("{:#?}", tree);
 
   Ok(Some(tree))
 }
@@ -127,10 +133,11 @@ fn categorize_char(c: char) -> CharKind {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExpressionNode {
-  kind: ExpressionNodeKind,
-  value: String,
+  pub kind: ExpressionNodeKind,
+  pub value: String,
+  pub id: usize,
 }
 
 impl ExpressionNode {
@@ -138,6 +145,7 @@ impl ExpressionNode {
     ExpressionNode {
       kind: ExpressionNodeKind::Init,
       value: String::new(),
+      id: 0,
     }
   }
   fn set_kind(&mut self, t: ExpressionNodeKind) {
