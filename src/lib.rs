@@ -27,16 +27,16 @@ pub fn run() {
     if let Some(tree) = parse_result {
       if let Some(root) = tree.root {
 
-        println!("{:#?}", root);
+        println!("Parsed Tree Root: {:#?}", root);
 
-        // let result = evaluator::evaluate(root).unwrap_or_else(|err| {
-        //   eprintln!("{:#?}", err);
-        //   None
-        // });
+        let result = evaluator::evaluate(root).unwrap_or_else(|err| {
+          eprintln!("{:#?}", err);
+          None
+        });
 
-        // if let Some(result) = result {
-        //   println!("Result: {}", result);
-        // }
+        if let Some(result) = result {
+          println!("Result: {}", result);
+        }
       }
     }
   }
