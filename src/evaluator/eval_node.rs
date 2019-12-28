@@ -1,7 +1,7 @@
 
 use crate::enums::MathOperator;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum EvalNodeOperand {
   Float(f64),
   EvalNode(Box<EvalNode>),
@@ -9,16 +9,25 @@ pub enum EvalNodeOperand {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct EvalNode {
-  operator: MathOperator,
+  operator: Option<MathOperator>,
   pub priority: usize,
   pub left: EvalNodeOperand,
   pub right: EvalNodeOperand,
 }
 
 impl EvalNode {
-  pub fn new(op: MathOperator) -> EvalNode {
+  pub fn new() -> EvalNode {
+    EvalNode {
+      priority: 0,
+      operator: None,
+      left: EvalNodeOperand::Init,
+      right: EvalNodeOperand::Init,
+    }
+  }
+
+  pub fn set_operator(&mut self, op: MathOperator) {
     let priority = match op {
       MathOperator::Exponent => 1,
 
@@ -28,12 +37,23 @@ impl EvalNode {
       MathOperator::Add |
       MathOperator::Subtract => 3,
     };
+    self.priority = priority;
+    self.operator = Some(op);
+  }
 
-    EvalNode {
-      priority,
-      operator: op,
-      left: EvalNodeOperand::Init,
-      right: EvalNodeOperand::Init,
+  pub fn set_operand(&mut self, operand: EvalNodeOperand) {
+    if EvalNodeOperand::Init == self.left {
+      self.left = operand;
+    } else if EvalNodeOperand::Init == self.right {
+      self.right = operand;
+    }
+  }
+
+  pub fn is_full(&self) -> bool {
+    if self.left != EvalNodeOperand::Init && self.right != EvalNodeOperand::Init && self.operator != None {
+      true
+    } else {
+      false
     }
   }
 
@@ -64,11 +84,15 @@ impl EvalNode {
     };
 
     match self.operator {
-      MathOperator::Exponent => left.powf(right),
-      MathOperator::Multiply => left * right,
-      MathOperator::Divide => left / right,
-      MathOperator::Add => left + right,
-      MathOperator::Subtract => left - right,
+      Some(MathOperator::Exponent) => left.powf(right),
+      Some(MathOperator::Multiply) => left * right,
+      Some(MathOperator::Divide) => left / right,
+      Some(MathOperator::Add) => left + right,
+      Some(MathOperator::Subtract) => left - right,
+      None => {
+        eprintln!("cannot evalute because self.operator is None");
+        0.0
+      }
     }
   }
 }
