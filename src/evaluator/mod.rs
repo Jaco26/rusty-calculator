@@ -22,19 +22,42 @@ use eval_node::{EvalNode, EvalNodeOperand};
 
 pub fn evaluate(exp_tree_node: ExpressionTreeNode) -> Result<Option<f64>, RuntimeError> {
 
-  // store the indices of visited expression_tree_node_items
-  // let mut visited: HashMap<usize, &bool> = HashMap::new();
-  let mut visited = HashSet::new();
+  let mut visited: HashSet<usize> = HashSet::new();
 
   let mut queue_stack = PriorityQueue::new();
 
-  // For the given ExpressionTreeNode, get a list of all indices of 
-  // ExpressionNode::Operator nodes
+  // For the given ExpressionTreeNode, get a list of all indices of ExpressionNode::Operator nodes
   let operator_indices = OperatorIndices::new(&exp_tree_node.items);
+
+  process_operator_indices(&exp_tree_node, operator_indices.exponents, &mut visited, &mut queue_stack)?;
+
+  process_operator_indices(&exp_tree_node, operator_indices.mult_divide, &mut visited, &mut queue_stack)?;
+
+  process_operator_indices(&exp_tree_node, operator_indices.add_subtract, &mut visited, &mut queue_stack)?;
+  
+  println!("{:#?}", queue_stack);
+
+  let mut accum = 0.0;
+  while queue_stack.items.len() > 0 {
+    let mut dequeued = queue_stack.dequeue();
+    accum += dequeued.evaluate();
+  }
+
+  Ok(Some(accum))
+}
+
+
+
+fn process_operator_indices(
+  exp_tree_node: &ExpressionTreeNode,
+  indices: Vec<usize>,
+  visited: &mut HashSet<usize>,
+  queue_stack: &mut PriorityQueue,
+) -> Result<(), RuntimeError> {
 
   let mut eval_node = EvalNode::new();
 
-  for i in operator_indices.add_subtract {
+  for i in indices {
     let operator = exp_tree_node.items[i].clone();
     let left_of_operator = exp_tree_node.items[i - 1].clone();
     let right_of_operator = exp_tree_node.items[i + 1].clone();
@@ -121,16 +144,13 @@ pub fn evaluate(exp_tree_node: ExpressionTreeNode) -> Result<Option<f64>, Runtim
     eval_node = EvalNode::new();
   }
 
-  println!("{:#?}", queue_stack);
-
-  let mut accum = 0.0;
-  while queue_stack.items.len() > 0 {
-    let mut dequeued = queue_stack.dequeue();
-    accum += dequeued.evaluate();
-  }
-
-  Ok(Some(accum))
+  Ok(())
 }
+
+
+
+
+
 
 
 #[derive(Debug)]
@@ -145,7 +165,6 @@ impl PriorityQueue {
 
   fn enqueue(&mut self, eval_node: EvalNode) {
     self.items.push(eval_node);
-    // self.items.sort_by(|a, b| a.priority.cmp(&b.priority));
   }
 
   fn dequeue(&mut self) -> EvalNode {
