@@ -41,14 +41,6 @@ impl EvalNode {
     self.operator = Some(op);
   }
 
-  pub fn set_operand(&mut self, operand: EvalNodeOperand) {
-    if EvalNodeOperand::Init == self.left {
-      self.left = operand;
-    } else if EvalNodeOperand::Init == self.right {
-      self.right = operand;
-    }
-  }
-
   pub fn is_full(&self) -> bool {
     if self.left != EvalNodeOperand::Init && self.right != EvalNodeOperand::Init && self.operator != None {
       true
