@@ -35,7 +35,7 @@ pub fn evaluate(exp_tree_node: ExpressionTreeNode) -> Result<Option<f64>, Runtim
 
   process_operator_indices(&exp_tree_node, operator_indices.add_subtract, &mut visited, &mut queue_stack)?;
   
-  println!("{:#?}", queue_stack);
+  // println!("{:#?}", queue_stack);
 
   let mut accum = 0.0;
   while queue_stack.items.len() > 0 {
@@ -58,9 +58,11 @@ fn process_operator_indices(
   let mut eval_node = EvalNode::new();
 
   for i in indices {
+    let left_i = i - 1;
+    let right_i = i + 1;
     let operator = exp_tree_node.items[i].clone();
-    let left_of_operator = exp_tree_node.items[i - 1].clone();
-    let right_of_operator = exp_tree_node.items[i + 1].clone();
+    let left_of_operator = exp_tree_node.items[left_i].clone();
+    let right_of_operator = exp_tree_node.items[right_i].clone();
 
     if let ExpressionTreeNodeItem::Child(exp_node) = operator {
       match exp_node.kind {
@@ -73,15 +75,24 @@ fn process_operator_indices(
 
     match left_of_operator {
       ExpressionTreeNodeItem::Parent(exp_tree_node) => {
-        let evaluated = evaluate(exp_tree_node).unwrap().unwrap();
-        if eval_node.left == EvalNodeOperand::Init {
-          eval_node.left = EvalNodeOperand::Float(evaluated);
-        } else if eval_node.right == EvalNodeOperand::Init {
-          eval_node.right = EvalNodeOperand::Float(evaluated);
+        if visited.contains(&left_i) {
+          if eval_node.left == EvalNodeOperand::Init {
+            eval_node.left = EvalNodeOperand::Float(0.0);
+          } else if eval_node.right == EvalNodeOperand::Init {
+            eval_node.right = EvalNodeOperand::Float(0.0);
+          }
+        } else {
+          let evaluated = evaluate(exp_tree_node).unwrap().unwrap();
+          if eval_node.left == EvalNodeOperand::Init {
+            eval_node.left = EvalNodeOperand::Float(evaluated);
+          } else if eval_node.right == EvalNodeOperand::Init {
+            eval_node.right = EvalNodeOperand::Float(evaluated);
+          }
         }
+        visited.insert(left_i);
       },
       ExpressionTreeNodeItem::Child(exp_node) => {
-        if visited.contains(&exp_node.id) {
+        if visited.contains(&left_i) {
           let last_added = queue_stack.pop().unwrap(); // NEED WAY OF TARGETING CORRECT QUEUED EVAL ITEM
           if eval_node.left == EvalNodeOperand::Init {
             eval_node.left = EvalNodeOperand::EvalNode(Box::new(last_added));
@@ -100,7 +111,7 @@ fn process_operator_indices(
             },
             _ => {}
           }
-          visited.insert(exp_node.id);
+          visited.insert(left_i);
         }
       }
     }
@@ -108,15 +119,24 @@ fn process_operator_indices(
     
     match right_of_operator {
       ExpressionTreeNodeItem::Parent(exp_tree_node) => {
-        let evaluated = evaluate(exp_tree_node).unwrap().unwrap();
-        if eval_node.left == EvalNodeOperand::Init {
-          eval_node.left = EvalNodeOperand::Float(evaluated);
-        } else if eval_node.right == EvalNodeOperand::Init {
-          eval_node.right = EvalNodeOperand::Float(evaluated);
+        if visited.contains(&right_i) {
+          if eval_node.left == EvalNodeOperand::Init {
+            eval_node.left = EvalNodeOperand::Float(0.0);
+          } else if eval_node.right == EvalNodeOperand::Init {
+            eval_node.right = EvalNodeOperand::Float(0.0);
+          }
+        } else {
+          let evaluated = evaluate(exp_tree_node).unwrap().unwrap();
+          if eval_node.left == EvalNodeOperand::Init {
+            eval_node.left = EvalNodeOperand::Float(evaluated);
+          } else if eval_node.right == EvalNodeOperand::Init {
+            eval_node.right = EvalNodeOperand::Float(evaluated);
+          }
+          visited.insert(right_i);
         }
       },
       ExpressionTreeNodeItem::Child(exp_node) => {
-        if visited.contains(&exp_node.id) {
+        if visited.contains(&right_i) {
           let last_added = queue_stack.pop().unwrap(); // NEED WAY OF TARGETING CORRECT QUEUED EVAL ITEM
           if eval_node.left == EvalNodeOperand::Init {
             eval_node.left = EvalNodeOperand::EvalNode(Box::new(last_added));
@@ -135,7 +155,7 @@ fn process_operator_indices(
             },
             _ => {}
           }
-          visited.insert(exp_node.id);
+          visited.insert(right_i);
         }
       }
     }

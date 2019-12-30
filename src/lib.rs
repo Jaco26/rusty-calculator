@@ -26,9 +26,6 @@ pub fn run() {
 
     if let Some(tree) = parse_result {
       if let Some(root) = tree.root {
-
-        // println!("Parsed Tree Root: {:#?}", root);
-
         let result = evaluator::evaluate(root).unwrap_or_else(|err| {
           eprintln!("{:#?}", err);
           None

@@ -12,7 +12,6 @@ pub enum EvalNodeOperand {
 #[derive(Debug, Clone, PartialEq)]
 pub struct EvalNode {
   operator: Option<MathOperator>,
-  pub priority: usize,
   pub left: EvalNodeOperand,
   pub right: EvalNodeOperand,
 }
@@ -20,7 +19,6 @@ pub struct EvalNode {
 impl EvalNode {
   pub fn new() -> EvalNode {
     EvalNode {
-      priority: 0,
       operator: None,
       left: EvalNodeOperand::Init,
       right: EvalNodeOperand::Init,
@@ -28,26 +26,9 @@ impl EvalNode {
   }
 
   pub fn set_operator(&mut self, op: MathOperator) {
-    let priority = match op {
-      MathOperator::Exponent => 1,
-
-      MathOperator::Multiply |
-      MathOperator::Divide => 2,
-
-      MathOperator::Add |
-      MathOperator::Subtract => 3,
-    };
-    self.priority = priority;
     self.operator = Some(op);
   }
 
-  pub fn is_full(&self) -> bool {
-    if self.left != EvalNodeOperand::Init && self.right != EvalNodeOperand::Init && self.operator != None {
-      true
-    } else {
-      false
-    }
-  }
 
   pub fn evaluate(&mut self) -> f64 {
 
