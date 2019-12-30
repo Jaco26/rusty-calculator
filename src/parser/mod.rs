@@ -87,18 +87,13 @@ pub fn parse(input: &str) -> Result<Option<ExpressionTree>, SyntaxError> {
     }
   }
 
-  let mut id = 1;
-
   let expression_nodes: Vec<ExpressionNode> = accum.items.iter().fold(Vec::new(), |mut acc, x| {
     match x.kind {
       ExpressionNodeKind::Init |
       ExpressionNodeKind::Space => {},
 
       _ => {
-        let mut x = x.clone();
-        x.id = id;
-        id += 1;
-        acc.push(x);
+        acc.push(x.clone());
       },
     }
 
@@ -137,7 +132,6 @@ fn categorize_char(c: char) -> CharKind {
 pub struct ExpressionNode {
   pub kind: ExpressionNodeKind,
   pub value: String,
-  pub id: usize,
 }
 
 impl ExpressionNode {
@@ -145,7 +139,6 @@ impl ExpressionNode {
     ExpressionNode {
       kind: ExpressionNodeKind::Init,
       value: String::new(),
-      id: 0,
     }
   }
   fn set_kind(&mut self, t: ExpressionNodeKind) {

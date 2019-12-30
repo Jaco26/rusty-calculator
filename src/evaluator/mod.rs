@@ -61,8 +61,6 @@ fn process_operator_indices(
     let left_i = i - 1;
     let right_i = i + 1;
     let operator = exp_tree_node.items[i].clone();
-    let left_of_operator = exp_tree_node.items[left_i].clone();
-    let right_of_operator = exp_tree_node.items[right_i].clone();
 
     if let ExpressionTreeNodeItem::Child(exp_node) = operator {
       match exp_node.kind {
@@ -73,92 +71,8 @@ fn process_operator_indices(
       }
     };
 
-    match left_of_operator {
-      ExpressionTreeNodeItem::Parent(exp_tree_node) => {
-        if visited.contains(&left_i) {
-          if eval_node.left == EvalNodeOperand::Init {
-            eval_node.left = EvalNodeOperand::Float(0.0);
-          } else if eval_node.right == EvalNodeOperand::Init {
-            eval_node.right = EvalNodeOperand::Float(0.0);
-          }
-        } else {
-          let evaluated = evaluate(exp_tree_node).unwrap().unwrap();
-          if eval_node.left == EvalNodeOperand::Init {
-            eval_node.left = EvalNodeOperand::Float(evaluated);
-          } else if eval_node.right == EvalNodeOperand::Init {
-            eval_node.right = EvalNodeOperand::Float(evaluated);
-          }
-        }
-        visited.insert(left_i);
-      },
-      ExpressionTreeNodeItem::Child(exp_node) => {
-        if visited.contains(&left_i) {
-          let last_added = queue_stack.pop().unwrap(); // NEED WAY OF TARGETING CORRECT QUEUED EVAL ITEM
-          if eval_node.left == EvalNodeOperand::Init {
-            eval_node.left = EvalNodeOperand::EvalNode(Box::new(last_added));
-          } else if eval_node.right == EvalNodeOperand::Init {
-            eval_node.right = EvalNodeOperand::EvalNode(Box::new(last_added));
-          }
-        } else {
-          match exp_node.kind {
-            ExpressionNodeKind::Float => {
-              let parsed = exp_node.value.parse().unwrap();
-              if eval_node.left == EvalNodeOperand::Init {
-                eval_node.left = EvalNodeOperand::Float(parsed);
-              } else if eval_node.right == EvalNodeOperand::Init {
-                eval_node.right = EvalNodeOperand::Float(parsed);
-              }
-            },
-            _ => {}
-          }
-          visited.insert(left_i);
-        }
-      }
-    }
-
-    
-    match right_of_operator {
-      ExpressionTreeNodeItem::Parent(exp_tree_node) => {
-        if visited.contains(&right_i) {
-          if eval_node.left == EvalNodeOperand::Init {
-            eval_node.left = EvalNodeOperand::Float(0.0);
-          } else if eval_node.right == EvalNodeOperand::Init {
-            eval_node.right = EvalNodeOperand::Float(0.0);
-          }
-        } else {
-          let evaluated = evaluate(exp_tree_node).unwrap().unwrap();
-          if eval_node.left == EvalNodeOperand::Init {
-            eval_node.left = EvalNodeOperand::Float(evaluated);
-          } else if eval_node.right == EvalNodeOperand::Init {
-            eval_node.right = EvalNodeOperand::Float(evaluated);
-          }
-          visited.insert(right_i);
-        }
-      },
-      ExpressionTreeNodeItem::Child(exp_node) => {
-        if visited.contains(&right_i) {
-          let last_added = queue_stack.pop().unwrap(); // NEED WAY OF TARGETING CORRECT QUEUED EVAL ITEM
-          if eval_node.left == EvalNodeOperand::Init {
-            eval_node.left = EvalNodeOperand::EvalNode(Box::new(last_added));
-          } else if eval_node.right == EvalNodeOperand::Init {
-            eval_node.right = EvalNodeOperand::EvalNode(Box::new(last_added));
-          }
-        } else {
-          match exp_node.kind {
-            ExpressionNodeKind::Float => {
-              let parsed = exp_node.value.parse().unwrap();
-              if eval_node.left == EvalNodeOperand::Init {
-                eval_node.left = EvalNodeOperand::Float(parsed);
-              } else if eval_node.right == EvalNodeOperand::Init {
-                eval_node.right = EvalNodeOperand::Float(parsed);
-              }
-            },
-            _ => {}
-          }
-          visited.insert(right_i);
-        }
-      }
-    }
+    handle_operand(left_i, &exp_tree_node, &mut eval_node, visited, queue_stack)?;
+    handle_operand(right_i, &exp_tree_node, &mut eval_node, visited, queue_stack)?;
 
     queue_stack.enqueue(eval_node);
     eval_node = EvalNode::new();
@@ -168,7 +82,61 @@ fn process_operator_indices(
 }
 
 
+fn handle_operand(
+  operand_index: usize,
+  exp_tree_node: &ExpressionTreeNode,
+  eval_node: &mut EvalNode,
+  visited: &mut HashSet<usize>,
+  queue_stack: &mut PriorityQueue,
+) -> Result<(), RuntimeError> {
 
+  let mut operand = exp_tree_node.items[operand_index].clone();
+
+  match operand {
+    ExpressionTreeNodeItem::Parent(exp_tree_node) => {
+      if visited.contains(&operand_index) {
+        if eval_node.left == EvalNodeOperand::Init {
+          eval_node.left = EvalNodeOperand::Float(0.0);
+        } else if eval_node.right == EvalNodeOperand::Init {
+          eval_node.right = EvalNodeOperand::Float(0.0);
+        }
+      } else {
+        let evaluated = evaluate(exp_tree_node).unwrap().unwrap();
+        if eval_node.left == EvalNodeOperand::Init {
+          eval_node.left = EvalNodeOperand::Float(evaluated);
+        } else if eval_node.right == EvalNodeOperand::Init {
+          eval_node.right = EvalNodeOperand::Float(evaluated);
+        }
+      }
+      visited.insert(operand_index);
+    },
+    ExpressionTreeNodeItem::Child(exp_node) => {
+      if visited.contains(&operand_index) {
+        let last_added = &queue_stack.pop().unwrap(); // NEED WAY OF TARGETING CORRECT QUEUED EVAL ITEM
+        if eval_node.left == EvalNodeOperand::Init {
+          eval_node.left = EvalNodeOperand::EvalNode(Box::new(last_added.clone()));
+        } else if eval_node.right == EvalNodeOperand::Init {
+          eval_node.right = EvalNodeOperand::EvalNode(Box::new(last_added.clone()));
+        }
+      } else {
+        match exp_node.kind {
+          ExpressionNodeKind::Float => {
+            let parsed = exp_node.value.parse().unwrap();
+            if eval_node.left == EvalNodeOperand::Init {
+              eval_node.left = EvalNodeOperand::Float(parsed);
+            } else if eval_node.right == EvalNodeOperand::Init {
+              eval_node.right = EvalNodeOperand::Float(parsed);
+            }
+          },
+          _ => {}
+        }
+        visited.insert(operand_index);
+      }
+    }
+  }
+
+  Ok(())
+}
 
 
 
