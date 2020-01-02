@@ -5,89 +5,115 @@ use crate::errors::SyntaxError;
 
 use expression_tree::ExpressionTree;
 
-pub fn parse(input: &str) -> Result<Option<ExpressionTree>, SyntaxError> {
+pub fn parse(input: &mut str) -> Result<Option<ParserResult>, SyntaxError> {
+
+  let mut var: Option<&str> = None;
+
+  let mut exp: Option<&str> = None;
+
+  if let Some(i) = input.find('=') {
+    let split_input = input.split_at(i + 1);
+    var = Some(split_input.0);
+    exp = Some(split_input.1);
+  } else if let None = exp {
+    exp = Some(input);
+  }
+  
+  let mut rv = ParserResult::new();
+
+  if let Some(variable_name) = var {
+    let mut variable_name = variable_name.to_string();
+    variable_name.pop();
+    variable_name = variable_name.trim().to_string();
+    rv.assign_to = Some(variable_name);
+  }
 
   let mut accum = ExpressionAccumulator::new();
 
-  for (i, ch) in input.char_indices() {
-    match categorize_char(ch) {
-
-      CharKind::Alpha => {
-        accum.buffer.set_kind(ExpressionNodeKind::VariableName);
-        accum.buffer.value.push(ch);
-        if i == input.len() - 1 {
+  if let Some(expression) = exp {
+    for (i, ch) in expression.to_string().char_indices() {
+      match categorize_char(ch) {
+        CharKind::Alpha => {
+          accum.buffer.set_kind(ExpressionNodeKind::VariableName);
+          accum.buffer.value.push(ch);
+          if i == input.len() - 1 {
+            accum.flush_buffer();
+          }
+        },
+  
+        CharKind::Number |
+        CharKind::Dot => {
+          accum.buffer.set_kind(ExpressionNodeKind::Float);
+          accum.buffer.value.push(ch);
+          if i == input.len() - 1 {
+            accum.flush_buffer();
+          }
+        },
+  
+        CharKind::LeftParen => {
           accum.flush_buffer();
-        }
-      },
-
-      CharKind::Number |
-      CharKind::Dot => {
-        accum.buffer.set_kind(ExpressionNodeKind::Float);
-        accum.buffer.value.push(ch);
-        if i == input.len() - 1 {
+          accum.buffer.set_kind(ExpressionNodeKind::LeftParen);
+          accum.buffer.value.push(ch);
           accum.flush_buffer();
-        }
-      },
-
-      CharKind::LeftParen => {
-        accum.flush_buffer();
-        accum.buffer.set_kind(ExpressionNodeKind::LeftParen);
-        accum.buffer.value.push(ch);
-        accum.flush_buffer();
-      },
-
-      CharKind::RightParen => {
-        accum.flush_buffer();
-        accum.buffer.set_kind(ExpressionNodeKind::RightParen);
-        accum.buffer.value.push(ch);
-        accum.flush_buffer();
-      },
-
-      CharKind::Operator(math_op) => {
-        match math_op {
-          MathOperator::Multiply => {
-            if let Some(last_item) = accum.items.last() {
-              if let ExpressionNodeKind::Operator(MathOperator::Multiply) = last_item.kind {
-                accum.buffer.set_kind(ExpressionNodeKind::Operator(MathOperator::Exponent));
-                accum.buffer.value.push_str("**");
-                accum.items.pop();
-                accum.flush_buffer();
+        },
+  
+        CharKind::RightParen => {
+          accum.flush_buffer();
+          accum.buffer.set_kind(ExpressionNodeKind::RightParen);
+          accum.buffer.value.push(ch);
+          accum.flush_buffer();
+        },
+  
+        CharKind::Operator(math_op) => {
+          match math_op {
+            MathOperator::Multiply => {
+              if let Some(last_item) = accum.items.last() {
+                if let ExpressionNodeKind::Operator(MathOperator::Multiply) = last_item.kind {
+                  accum.buffer.set_kind(ExpressionNodeKind::Operator(MathOperator::Exponent));
+                  accum.buffer.value.push_str("**");
+                  accum.items.pop();
+                  accum.flush_buffer();
+                } else {
+                  accum.flush_buffer();
+                  accum.buffer.set_kind(ExpressionNodeKind::Operator(math_op));
+                  accum.buffer.value.push(ch);
+                  accum.flush_buffer();
+                }
               } else {
                 accum.flush_buffer();
                 accum.buffer.set_kind(ExpressionNodeKind::Operator(math_op));
                 accum.buffer.value.push(ch);
                 accum.flush_buffer();
               }
-            } else {
+            },
+            _ => {
               accum.flush_buffer();
               accum.buffer.set_kind(ExpressionNodeKind::Operator(math_op));
               accum.buffer.value.push(ch);
               accum.flush_buffer();
             }
-          },
-          _ => {
-            accum.flush_buffer();
-            accum.buffer.set_kind(ExpressionNodeKind::Operator(math_op));
-            accum.buffer.value.push(ch);
-            accum.flush_buffer();
           }
+        },
+  
+        CharKind::Space => {
+          accum.flush_buffer();
+          accum.buffer.set_kind(ExpressionNodeKind::Space);
+          accum.buffer.value.push(ch);
+          accum.flush_buffer();
+        },
+  
+        CharKind::AssignmentOperator => {},
+  
+        _ => {
+          eprintln!("[warning] unknown character: '{}'", ch);
         }
-      },
-
-      CharKind::Space => {
-        accum.flush_buffer();
-        accum.buffer.set_kind(ExpressionNodeKind::Space);
-        accum.buffer.value.push(ch);
-        accum.flush_buffer();
-      },
-
-      _ => {
-        eprintln!("[warning] unknown character: '{}'", ch);
       }
     }
   }
 
-  let expression_nodes: Vec<ExpressionNode> = accum.items.iter().fold(Vec::new(), |mut acc, x| {
+  accum.flush_buffer();
+
+  let mut expression_nodes: Vec<ExpressionNode> = accum.items.iter().fold(Vec::new(), |mut acc, x| {
     match x.kind {
       ExpressionNodeKind::Init |
       ExpressionNodeKind::Space => {},
@@ -104,7 +130,9 @@ pub fn parse(input: &str) -> Result<Option<ExpressionTree>, SyntaxError> {
 
   tree.parse(expression_nodes)?;
 
-  Ok(Some(tree))
+  rv.expression = Some(tree);
+
+  Ok(Some(rv))
 }
 
 
@@ -118,6 +146,9 @@ fn categorize_char(c: char) -> CharKind {
     '+' => CharKind::Operator(MathOperator::Add),
     '/' => CharKind::Operator(MathOperator::Divide),
     '*' => CharKind::Operator(MathOperator::Multiply),
+
+    '=' => CharKind::AssignmentOperator,
+
     '0'..='9' => CharKind::Number,
 
     'a'..='z' |
@@ -170,4 +201,14 @@ impl ExpressionAccumulator {
 }
 
 
+#[derive(Debug)]
+pub struct ParserResult {
+  pub expression: Option<ExpressionTree>,
+  pub assign_to: Option<String>,
+}
 
+impl ParserResult {
+  fn new() -> ParserResult {
+    ParserResult { expression: None, assign_to: None }
+  }
+}

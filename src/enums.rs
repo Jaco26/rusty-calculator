@@ -16,6 +16,7 @@ pub enum CharKind {
   Dot,
   Alpha,
   Number,
+  AssignmentOperator,
   Operator(MathOperator)
 }
 

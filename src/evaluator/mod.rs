@@ -1,7 +1,7 @@
 
 mod eval_node;
 
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 
 use crate::errors::RuntimeError;
 use crate::enums::{
@@ -20,7 +20,29 @@ use crate::parser::{
 use eval_node::{EvalNode, EvalNodeOperand};
 
 
-pub fn evaluate(exp_tree_node: ExpressionTreeNode) -> Result<Option<f64>, RuntimeError> {
+pub fn evaluate(evaluated: &HashMap<String, f64>, exp_tree_node: ExpressionTreeNode) -> Result<Option<f64>, RuntimeError> {
+
+  if exp_tree_node.items.len() == 1 {
+    match exp_tree_node.items[0].clone() {
+      ExpressionTreeNodeItem::Child(exp_node) => {
+        match exp_node.kind {
+          ExpressionNodeKind::VariableName => {
+            let stored_value = evaluated.get(&exp_node.value);
+            if let Some(value) = stored_value {
+              return Ok(Some(*value));
+            } else {
+              return Err(RuntimeError::VariableIsUndfined);
+            }
+          },
+          ExpressionNodeKind::Float => {
+            return Ok(Some(exp_node.value.parse().unwrap()));
+          },
+          _ => {},
+        }
+      },
+      _ => {},
+    }
+  }
 
   let mut visited: HashSet<usize> = HashSet::new();
 
@@ -29,13 +51,29 @@ pub fn evaluate(exp_tree_node: ExpressionTreeNode) -> Result<Option<f64>, Runtim
   // For the given ExpressionTreeNode, get a list of all indices of ExpressionNode::Operator nodes
   let operator_indices = OperatorIndices::new(&exp_tree_node.items);
 
-  process_operator_indices(&exp_tree_node, operator_indices.exponents, &mut visited, &mut queue_stack)?;
+  process_operator_indices(
+    evaluated,
+    &exp_tree_node,
+    operator_indices.exponents,
+    &mut visited,
+    &mut queue_stack
+  )?;
 
-  process_operator_indices(&exp_tree_node, operator_indices.mult_divide, &mut visited, &mut queue_stack)?;
+  process_operator_indices(
+    evaluated,
+    &exp_tree_node,
+    operator_indices.mult_divide,
+    &mut visited,
+    &mut queue_stack
+  )?;
 
-  process_operator_indices(&exp_tree_node, operator_indices.add_subtract, &mut visited, &mut queue_stack)?;
-  
-  // println!("{:#?}", queue_stack);
+  process_operator_indices(
+    evaluated,
+    &exp_tree_node,
+    operator_indices.add_subtract,
+    &mut visited,
+    &mut queue_stack
+  )?;
 
   let mut accum = 0.0;
   while queue_stack.items.len() > 0 {
@@ -49,6 +87,7 @@ pub fn evaluate(exp_tree_node: ExpressionTreeNode) -> Result<Option<f64>, Runtim
 
 
 fn process_operator_indices(
+  evaluated: &HashMap<String, f64>,
   exp_tree_node: &ExpressionTreeNode,
   indices: Vec<usize>,
   visited: &mut HashSet<usize>,
@@ -71,8 +110,8 @@ fn process_operator_indices(
       }
     };
 
-    handle_operand(left_i, &exp_tree_node, &mut eval_node, visited, queue_stack)?;
-    handle_operand(right_i, &exp_tree_node, &mut eval_node, visited, queue_stack)?;
+    handle_operand(left_i, &exp_tree_node, &mut eval_node, visited, queue_stack, evaluated)?;
+    handle_operand(right_i, &exp_tree_node, &mut eval_node, visited, queue_stack, evaluated)?;
 
     queue_stack.enqueue(eval_node);
     eval_node = EvalNode::new();
@@ -88,6 +127,7 @@ fn handle_operand(
   eval_node: &mut EvalNode,
   visited: &mut HashSet<usize>,
   queue_stack: &mut PriorityQueue,
+  evaluated: &HashMap<String, f64>,
 ) -> Result<(), RuntimeError> {
 
   let mut operand = exp_tree_node.items[operand_index].clone();
@@ -101,7 +141,7 @@ fn handle_operand(
           eval_node.right = EvalNodeOperand::Float(0.0);
         }
       } else {
-        let evaluated = evaluate(exp_tree_node).unwrap().unwrap();
+        let evaluated = evaluate(evaluated, exp_tree_node).unwrap().unwrap();
         if eval_node.left == EvalNodeOperand::Init {
           eval_node.left = EvalNodeOperand::Float(evaluated);
         } else if eval_node.right == EvalNodeOperand::Init {
@@ -126,6 +166,18 @@ fn handle_operand(
               eval_node.left = EvalNodeOperand::Float(parsed);
             } else if eval_node.right == EvalNodeOperand::Init {
               eval_node.right = EvalNodeOperand::Float(parsed);
+            }
+          },
+          ExpressionNodeKind::VariableName => {
+            let stored_value = evaluated.get(&exp_node.value);
+            if let Some(value) = stored_value {
+              if eval_node.left == EvalNodeOperand::Init {
+                eval_node.left = EvalNodeOperand::Float(*value);
+              } else if eval_node.right == EvalNodeOperand::Init {
+                eval_node.right = EvalNodeOperand::Float(*value);
+              }
+            } else {
+              return Err(RuntimeError::VariableIsUndfined);
             }
           },
           _ => {}

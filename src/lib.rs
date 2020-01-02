@@ -14,26 +14,44 @@ pub fn run() {
   let mut evaluated: HashMap<String, f64> = HashMap::new();
 
   loop {
-    let raw_input = get_user_input().unwrap_or_else(|err| {
+    let mut raw_input = get_user_input().unwrap_or_else(|err| {
       eprintln!("[error getting user input] {:?}", err);
       std::process::exit(1);
     });
 
-    let parse_result = parser::parse(&raw_input).unwrap_or_else(|err| {
+    let parser_result = parser::parse(&mut raw_input).unwrap_or_else(|err| {
       eprintln!("{:#?}", err);
       None
     });
 
-    if let Some(tree) = parse_result {
-      if let Some(root) = tree.root {
-        let result = evaluator::evaluate(root).unwrap_or_else(|err| {
-          eprintln!("{:#?}", err);
-          None
-        });
 
-        if let Some(result) = result {
-          println!("Result: {}", result);
-        }
+    if let Some(parser_result) = parser_result {
+      match parser_result.expression {
+        Some(exp_tree) => {
+          if let Some(root) = exp_tree.root {
+            let evaluation_result = evaluator::evaluate(&evaluated, root).unwrap_or_else(|err| {
+              eprintln!("{:#?}", err);
+              None
+            });
+            if let Some(value) = evaluation_result {
+              match parser_result.assign_to {
+                Some(variable_name) => {
+                  evaluated.insert(variable_name, value);
+                },
+                None => {
+                  println!("{}", value);
+                },
+              }
+            }
+          }
+        },
+        None => {
+          if let Some(variable_name) = parser_result.assign_to {
+            if let Some(stored_value) = evaluated.get(&variable_name) {
+              println!("{}", stored_value);
+            }
+          }
+        },
       }
     }
   }
